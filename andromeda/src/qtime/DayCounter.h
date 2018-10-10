@@ -14,9 +14,9 @@ namespace qtime
 
 		DayCounter();
 		virtual std::string name() = 0;
-		virtual double dayCount(const QDate& d1, const QDate& d2) = 0;
-		virtual double yearfraction(const QDate& d1, const QDate& d2) = 0;
-		virtual double daysperyear() = 0;		
+		virtual double dayCount(const QDate& d1, const QDate& d2) const = 0;
+		virtual double yearfraction(const QDate& d1, const QDate& d2) const = 0;
+		virtual double daysperyear() const = 0;
 	};
 
 	class EXPORT_SYMBOL Actual360 :public DayCounter
@@ -27,10 +27,10 @@ namespace qtime
 		Actual360() = delete;
 		Actual360(bool includelastday);
 		std::string name() override;
-		double dayCount(const QDate& d1, const QDate& d2) override;
-		double yearfraction(const QDate& d1, const QDate& d2) override;
+		double dayCount(const QDate& d1, const QDate& d2) const override;
+		double yearfraction(const QDate& d1, const QDate& d2) const override;
 
-		double daysperyear() override;
+		double daysperyear() const override;
 	};
 
 	class EXPORT_SYMBOL Actual365fixed :public DayCounter
@@ -39,10 +39,10 @@ namespace qtime
 	public:
 		Actual365fixed();
 		std::string name() override;
-		double dayCount(const QDate& d1, const QDate& d2) override;
-		double yearfraction(const QDate& d1, const QDate& d2) override;
+		double dayCount(const QDate& d1, const QDate& d2) const override;
+		double yearfraction(const QDate& d1, const QDate& d2) const override;
 
-		double daysperyear() override;
+		double daysperyear() const override;
 	};
 
 	class EXPORT_SYMBOL Thirty360 :public DayCounter
@@ -53,10 +53,10 @@ namespace qtime
 		Thirty360() = delete;
 		Thirty360(CONVENTION c, bool isLastPeriod);
 		std::string name() override;
-		double dayCount(const QDate& d1, const QDate& d2) override;
-		double yearfraction(const QDate& d1, const QDate& d2) override;
+		double dayCount(const QDate& d1, const QDate& d2) const override;
+		double yearfraction(const QDate& d1, const QDate& d2) const override;
 
-		double daysperyear() override;
+		double daysperyear() const override;
 	private:
 		std::function<double(const QDate&, const QDate&)> daycount_functor;
 		CONVENTION _convention;
@@ -69,9 +69,9 @@ namespace qtime
 	public:		
 		SimpleDayCounter();		
 		std::string name() override;
-		double dayCount(const QDate& d1, const QDate& d2) override;
-		double yearfraction(const QDate& d1, const QDate& d2) override;
-		double daysperyear() override;
+		double dayCount(const QDate& d1, const QDate& d2) const override;
+		double yearfraction(const QDate& d1, const QDate& d2) const override;
+		double daysperyear() const override;
 	private:
 		std::unique_ptr<DayCounter> fallback;
 	};

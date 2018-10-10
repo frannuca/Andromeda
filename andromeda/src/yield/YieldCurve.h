@@ -11,9 +11,10 @@ namespace yield
 
 	class EXPORT_SYMBOL  YieldCurve
 	{
-		std::unique_ptr<qtime::DayCounter>  dc_;
+		const qtime::DayCounter*  dc_;
+		const qtime::Calendar*  calendar_;
 		std::vector<const instrument::Instrument*> pinstruments;
-		YieldCurve(std::unique_ptr<qtime::DayCounter>& dc, const qtime::QDate& t0,std::vector<const instrument::Instrument*> pintr);
+		YieldCurve(const qtime::DayCounter* dc, const qtime::Calendar* calendar, const qtime::QDate& t0,std::vector<const instrument::Instrument*> pintr);
 		std::vector<double> t_;
 		std::vector<double> rates_;
 		
@@ -50,14 +51,17 @@ namespace yield
 	class EXPORT_SYMBOL YieldCurveBuilder
 	{
 		mutable std::vector<const instrument::Instrument*> instruments;
-		mutable std::unique_ptr<qtime::DayCounter> dc;
+		mutable boost::optional<const qtime::DayCounter*> dc;
+		mutable boost::optional<const qtime::Calendar*> calendar;
+		
 		const qtime::QDate t0_;
 		
 	public:
 		explicit YieldCurveBuilder(const qtime::QDate& t0);
 		
 		const YieldCurveBuilder& withInstrument(const instrument::Instrument* pintr) const;
-		const YieldCurveBuilder& withDayCount(std::unique_ptr<qtime::DayCounter> pdc) const;	
+		const YieldCurveBuilder& withDayCount(const qtime::DayCounter* pdc) const;	
+		const YieldCurveBuilder& withCalendar(const qtime::Calendar* pcalendar) const;
 		
 		std::unique_ptr<yield::YieldCurve> Build() const;
 	};

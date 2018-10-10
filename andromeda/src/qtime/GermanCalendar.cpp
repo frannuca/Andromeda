@@ -51,7 +51,7 @@ bool qtime::GermanCalendar::isBankHoliday(const qtime::QDate& date) const{
 
 		|| (d == 31 && m == MONTH::DEC))
 
-		return false;
+		return true;
 
-	return true;
+	return false;
 }

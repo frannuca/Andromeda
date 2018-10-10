@@ -118,16 +118,6 @@ qtime::QDate qtime::QDate::operator-(int ndays) const
 	return d;
 }
 
-qtime::QDate qtime::QDate::operator-=(int days) const
-{
-	return *this - days;
-}
-
-qtime::QDate qtime::QDate::operator+=(int days) const
-{
-	return *this + days;
-}
-
 int qtime::QDate::operator-(const QDate& that) const
 {
 	return (*_d - *(that._d)).days();
@@ -140,17 +130,17 @@ bool qtime::QDate::operator>(const QDate& that) const
 
 bool qtime::QDate::operator<(const QDate& that) const
 {
-	return !(this->operator>(that));
+	return (*_d) < *(that._d);
 }
 
 bool qtime::QDate::operator<=(const QDate& that) const
 {
-	return (this->operator<(that) || this->operator==(that));
+	return (*_d) <= *(that._d);
 }
 
 bool qtime::QDate::operator>=(const QDate& that) const
 {
-	return (this->operator>(that) || this->operator==(that));
+	return (*_d) >= *(that._d);
 }
 
 bool qtime::QDate::operator==(const QDate& that) const

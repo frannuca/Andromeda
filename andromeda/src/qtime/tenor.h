@@ -80,6 +80,7 @@ namespace qtime
 		inline QDate operator+(const QDate& x, const Tenor<SMONTH>& d) {
 			int m_0 = int(x.Month())-1 + int(d.n);
 			int newmonth = (m_0 % 12) + 1;
+			while (newmonth < 0) newmonth += 12;
 			double dy = m_0 / 12.0;					
 			return QDate(x.DayOfTheMonth(), newmonth, x.Year() + floor(dy));
 		}

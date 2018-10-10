@@ -10,7 +10,7 @@ namespace qtime
 			NoAdjustment = 0, Previous, Following, ModifiedPrevious, ModifiedFollowing,
 			EndofMonthNoAdjustment, EndofMonthPrevious, EndofMonthFollowing
 		};
-
+		BusinessDayConvention() = delete;
 		BusinessDayConvention(const Calendar* calendar, TYPE t);
 		QDate adapt(const QDate& d) const;
 

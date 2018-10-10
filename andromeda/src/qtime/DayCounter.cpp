@@ -18,18 +18,18 @@ namespace qtime
 		return _includeLastDay ? "Actual360 (inc)" : "Actual360";
 	}
 
-	double Actual360::dayCount(const QDate& d1, const QDate& d2)
+	double Actual360::dayCount(const QDate& d1, const QDate& d2) const
 	{		
 		auto dd = (d2 - d1);
 		return dd + (_includeLastDay ? 1.0 : 0.0);
 	}
 
-	double Actual360::yearfraction(const QDate& d1, const QDate& d2)
+	double Actual360::yearfraction(const QDate& d1, const QDate& d2) const
 	{
 		return dayCount(d1,d2) / 360.0;
 	}
 
-	double Actual360::daysperyear()
+	double Actual360::daysperyear() const
 	{
 		return 360;
 	}
@@ -43,45 +43,45 @@ namespace qtime
 		return "Actual365fixed";
 	}
 
-	double Actual365fixed::dayCount(const QDate& d1, const QDate& d2)
+	double Actual365fixed::dayCount(const QDate& d1, const QDate& d2) const
 	{
 		static const int MonthOffset[] = {
 
-			   0,  31,  59,  90, 120, 151,  // Jan - Jun
+			0,  31,  59,  90, 120, 151,  // Jan - Jun
 
-			   181, 212, 243, 273, 304, 334   // Jun - Dec
+			181, 212, 243, 273, 304, 334   // Jun - Dec
 
 		};
 
 
 
-		auto s1 = d1.DayOfTheMonth() + MonthOffset[d1.DayOfTheMonth() - 1] + (d1.Year() * 365);
+		int s1 = d1.DayOfTheMonth()+ MonthOffset[int(d1.Month()) - 1] + (d1.Year() * 365);
 
-		auto s2 = d2.DayOfTheMonth() + MonthOffset[d2.DayOfTheMonth() - 1] + (d2.Year() * 365);
+		int s2 = d2.DayOfTheMonth() + MonthOffset[int(d2.Month()) - 1] + (d2.Year() * 365);
 
 
 
 		if (d1.Month() == MONTH::FEB && d1.DayOfTheMonth() == 29) {
-
 			--s1;
 		}
 
 
 
 		if (d2.Month() == MONTH::FEB && d2.DayOfTheMonth() == 29) {
-
 			--s2;
 		}
+
+
 
 		return s2 - s1;
 	}
 
-	double Actual365fixed::yearfraction(const QDate& d1, const QDate& d2)
+	double Actual365fixed::yearfraction(const QDate& d1, const QDate& d2) const
 	{
 		return dayCount(d1, d2) / 365.0;		
 	}
 
-	double Actual365fixed::daysperyear()
+	double Actual365fixed::daysperyear() const
 	{
 		return 365;
 	}
@@ -172,17 +172,17 @@ namespace qtime
 		return oss.str();
 	}
 
-	double Thirty360::dayCount(const QDate& d1, const QDate& d2)
+	double Thirty360::dayCount(const QDate& d1, const QDate& d2) const
 	{
 		return this->daycount_functor(d1, d2);
 	}
 
-	double Thirty360::yearfraction(const QDate& d1, const QDate& d2)
+	double Thirty360::yearfraction(const QDate& d1, const QDate& d2) const
 	{
 		return dayCount(d1, d2) / 360.0;
 	}
 
-	double Thirty360::daysperyear()
+	double Thirty360::daysperyear() const
 	{
 		return 360;
 	}
@@ -197,12 +197,12 @@ namespace qtime
 		return "SimpleDayCounter";
 	}
 
-	double SimpleDayCounter::dayCount(const QDate& d1, const QDate& d2)
+	double SimpleDayCounter::dayCount(const QDate& d1, const QDate& d2) const
 	{
 		return fallback->dayCount(d1, d2);
 	}
 
-	double SimpleDayCounter::yearfraction(const QDate& d1, const QDate& d2)
+	double SimpleDayCounter::yearfraction(const QDate& d1, const QDate& d2) const
 	{
 		int dm1 = d1.DayOfTheMonth();
 		int dm2 = d2.DayOfTheMonth();
@@ -220,7 +220,7 @@ namespace qtime
 		}
 	}
 
-	double SimpleDayCounter::daysperyear()
+	double SimpleDayCounter::daysperyear() const
 	{
 		return 360;
 	}

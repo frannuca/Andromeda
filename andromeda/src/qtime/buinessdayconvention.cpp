@@ -23,7 +23,7 @@ qtime::QDate qtime::BusinessDayConvention::adapt_internal(const QDate& d, TYPE t
 			x = d - 1;
 			while (!p_calendar_->isBusinessDay(x))
 			{
-				x -= 1;
+				x = x - 1;
 			}
 			return x;
 		}
@@ -34,7 +34,7 @@ qtime::QDate qtime::BusinessDayConvention::adapt_internal(const QDate& d, TYPE t
 			x = d + 1;
 			while (!p_calendar_->isBusinessDay(x))
 			{
-				x += 1;
+				x = x + 1;
 			}
 			return x;
 		}

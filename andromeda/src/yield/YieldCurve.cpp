@@ -1,17 +1,19 @@
 ﻿#include "YieldCurve.h"
 #include <boost/range/combine.hpp>
+#include "../qtime/schedule.h"
+#include "../qtime/GermanCalendar.h"
+#include "../qtime/buinessdayconvention.h"
+#include <vector>
+#include <numeric>
 
 namespace
 {
 	boost::optional<std::pair<double, double>> None;
 }
 
-
-yield::YieldCurve::YieldCurve(std::unique_ptr<qtime::DayCounter>& dc, const qtime::QDate& t0, std::vector<const instrument::Instrument*> pintr):
-	 t0_(t0)
+yield::YieldCurve::YieldCurve(const qtime::DayCounter* dc, const qtime::Calendar* calendar, const qtime::QDate& t0, std::vector<const instrument::Instrument*> pintr):
+t0_(t0),pinstruments(pintr),calendar_(calendar),dc_(dc)
 {
-	pinstruments = std::move(pintr);	
-	dc_ = std::move(dc);
 }
 
 double yield::YieldCurve::discount(qtime::Tenor<qtime::SDAY> ndays)
@@ -125,9 +127,15 @@ const yield::YieldCurveBuilder& yield::YieldCurveBuilder::withInstrument(const i
 	return *this;
 }
 
-const yield::YieldCurveBuilder& yield::YieldCurveBuilder::withDayCount(std::unique_ptr<qtime::DayCounter> pdc) const
+const yield::YieldCurveBuilder& yield::YieldCurveBuilder::withDayCount(const qtime::DayCounter* pdc) const
 {
 	dc = std::move(pdc);
+	return *this;
+}
+
+const yield::YieldCurveBuilder& yield::YieldCurveBuilder::withCalendar(const qtime::Calendar* pcalendar) const
+{
+	this->calendar = pcalendar;
 	return *this;
 }
 
@@ -137,7 +145,11 @@ std::unique_ptr<yield::YieldCurve> yield::YieldCurveBuilder::Build() const
 	{
 		dc.reset(new qtime::SimpleDayCounter());
 	}
-	return std::move(std::unique_ptr<yield::YieldCurve>(new YieldCurve(dc, t0_,instruments)));
+	if(!calendar)
+	{
+		calendar.reset(new qtime::GermanCalendar());
+	}
+	return std::move(std::unique_ptr<yield::YieldCurve>(new YieldCurve(*dc,*calendar, t0_,instruments)));
 }
 
 void yield::YieldCurve::boostrap()
@@ -204,6 +216,7 @@ void yield::YieldCurve::boostrap()
 	}
 }
 
+
 double yield::YieldCurve::interpolated_rate(const double& t, boost::optional<std::pair<double, double>> pn)
 {
 	double t0, t1, r0, r1;
@@ -266,21 +279,34 @@ double yield::YieldCurve::interpolated_rate(const double& t, boost::optional<std
 double yield::YieldCurve::priceSwap(const instrument::Swap* swap,const double &p)
 {
 	//computing time in years:
-	auto tmat = int(dc_->yearfraction(t0_, swap->maturity)+0.5);
-	auto dt = qtime::to_years(swap->floating_leg->tenor);
+	
+	qtime::BusinessDayConvention c1(calendar_, qtime::BusinessDayConvention::TYPE::ModifiedFollowing);
+	qtime::BusinessDayConvention c2(calendar_, qtime::BusinessDayConvention::TYPE::ModifiedFollowing);
+	//QDate effectiveDate_, const QDate& terminationDate_, const Tenor<SMONTH> tenor_, const qtime::Calendar* calendar_, const BusinessDayConvention* convention_, const BusinessDayConvention* terminationDateConvention_, DateGeneration::Rule rule_
+	
+	qtime::Schedule schedule(t0_, swap->maturity, swap->floating_leg->tenor, calendar_, &c1, &c2,qtime::DateGeneration::Rule::Backward);
+	
+	std::vector<double> periods;
+	auto dates = schedule.Dates();
+	for(int i=1;i<dates.size();++i)
+	{
+		periods.push_back(dc_->yearfraction(dates[i-1], dates[i]));
+		std::cout << periods.back() << std::endl;
+	}
 
+	double tmat = std::accumulate(periods.begin(), periods.end(), 0.0, [](const double& acc, const double& z) {return acc + z; });
 	
 	double r = -log(p) / tmat;
 	double num = 1-p;
 	double den = 0;
-	double tx = dt;
 	
-	while(tx <= tmat)
+	double taccum = 0;
+	for(auto dt: periods)
 	{
+		taccum += dt;
 		boost::optional<std::pair<double, double>> xp(std::make_pair(tmat, r));
-		auto rx = interpolated_rate(tx, xp);
-		den += std::exp(-rx * tx)*dt;
-		tx += dt;
+		auto rx = interpolated_rate(taccum, xp);
+		den += std::exp(-rx * taccum)*dt;		
 	}
 
 	return num / den;

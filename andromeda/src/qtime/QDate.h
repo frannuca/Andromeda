@@ -36,8 +36,6 @@ public:
 	QDate MonthEnd() const;
 	QDate operator+(int days) const;
 	QDate operator-(int days) const;
-	QDate operator-=(int days) const;
-	QDate operator+=(int days) const;
 	int operator-(const QDate& that) const;
 	bool operator>(const QDate& that) const;
 	bool operator<(const QDate& that) const;

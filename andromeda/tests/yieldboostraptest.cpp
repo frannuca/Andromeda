@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(YIELDBOOTSTRAP)
 	std::unique_ptr<instrument::Swap>  swap3(new instrument::Swap(qtime::QDate(01, 01, 2021), 0.05, flow1, flow2));
 	std::unique_ptr<instrument::Swap>  swap5(new instrument::Swap(qtime::QDate(01, 01, 2023), 0.06, flow1, flow2));
 	std::unique_ptr<instrument::Swap>  swap10(new instrument::Swap(qtime::QDate(01, 01, 2028), 0.1, flow1, flow2));
-	std::unique_ptr <yield::YieldCurve> oyield = ybuilder.withDayCount(std::move(dc))
+	std::unique_ptr <yield::YieldCurve> oyield = ybuilder.withDayCount(dc.get())
 		.withInstrument(swap1.get())
 		.withInstrument(swap3.get()).withInstrument(swap5.get()).withInstrument(swap10.get()).withInstrument(libor1m.get()).withInstrument(libor3m.get())
 		.withInstrument(libor6m.get()).withInstrument(libor9m.get()).withInstrument(libor12m.get())
