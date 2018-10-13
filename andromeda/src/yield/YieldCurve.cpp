@@ -86,30 +86,13 @@ double yield::YieldCurve::rate(const qtime::QDate& t)
 
 double yield::YieldCurve::forward(const qtime::QDate& td1, qtime::Tenor<qtime::SDAY> ndays)
 {
-	auto t1 = qtime::to_years(qtime::Tenor<qtime::SDAY>(td1- t0_));
-		
-	auto dt2 = qtime::to_years(ndays);
-	auto t2 = t1 + dt2;
-	
-	return log(exp(compute_rate(t2)*t2 - compute_rate(t1)*t1)) / (t2 - t1);
-	/*1 / (1 + f * dt)*exp(-r1 * t1) = exp(-r2 * t2)
-		1 +exp( f * dt) = exp(r2*t2 - r1 * t1)
-		f *dt = ln(exp(r2*t2 - r1 * t1) - 1);*/
-}
+	auto t1 = dc_->yearfraction(t0_,td1);
 
-double yield::YieldCurve::forward(const qtime::QDate& t1, qtime::Tenor<qtime::SYEAR> nyears)
-{
-	throw "Not Implemented";
-}
+	auto dt = dc_->yearfraction(t0_,t0_+ndays);
 
-double yield::YieldCurve::forward(const qtime::QDate& t1, qtime::Tenor<qtime::SWEEK> nweeks)
-{
-	throw "Not Implemented";
-}
+    auto t2 = t1 + dt;
 
-double yield::YieldCurve::forward(const qtime::QDate& t1, qtime::Tenor<qtime::SMONTH> nmonths)
-{
-	throw "Not Implemented";
+	return (interpolated_rate(t2,None)*t2-interpolated_rate(t1,None)*t1)/dt;	
 }
 
 double yield::YieldCurve::forward(const qtime::QDate& t1, const qtime::QDate& t2)
