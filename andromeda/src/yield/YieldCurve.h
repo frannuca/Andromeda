@@ -40,9 +40,6 @@ namespace yield
 
 
 		double forward(const qtime::QDate& t1, qtime::Tenor<qtime::SDAY> ndays);
-		double forward(const qtime::QDate& t1, qtime::Tenor<qtime::SYEAR> nyears);
-		double forward(const qtime::QDate& t1, qtime::Tenor<qtime::SWEEK> nweeks);
-		double forward(const qtime::QDate& t1, qtime::Tenor<qtime::SMONTH> nmonths);
 		double forward(const qtime::QDate& t1, const qtime::QDate& t2);
 		void boostrap();
 	};

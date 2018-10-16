@@ -49,10 +49,10 @@ BOOST_AUTO_TEST_CASE(YIELDBOOTSTRAP)
 		std::cout << "t=" << t << " r=" << oyield->rate(Tenor<SYEAR>(t)) << std::endl;
 	}
 
-	auto f11y = oyield->forward(T0 + 365, qtime::Tenor<SDAY>(365));
-	auto f16m = oyield->forward(T0 + 365, qtime::Tenor<SDAY>(30 * 6));
-	auto f13m = oyield->forward(T0 + 365, qtime::Tenor<SDAY>(30 * 3));
-	auto f1y1d = oyield->forward(T0+365_days, 1_days);
-	auto r1y = oyield->rate(1_years);
-	auto d1 = oyield->discount(1_years);
+	auto f11y = oyield->forward(T0 + 365, 1_years);
+	auto f16m = oyield->forward(T0 + 365, 6_months);
+	auto f13m = oyield->forward(T0 + 365, 3_months);
+	auto f11d = oyield->forward(T0 + 365, 1_days);
+	auto d1 =   oyield->discount(1_years);
+	auto zz = 1 / (1 + f11d * to_years(Tenor<SDAY>(1)));
 }

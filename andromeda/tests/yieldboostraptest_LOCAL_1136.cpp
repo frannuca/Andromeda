@@ -55,4 +55,5 @@ BOOST_AUTO_TEST_CASE(YIELDBOOTSTRAP)
 	auto f1y1d = oyield->forward(T0+365_days, 1_days);
 	auto r1y = oyield->rate(1_years);
 	auto d1 = oyield->discount(1_years);
+	
 }

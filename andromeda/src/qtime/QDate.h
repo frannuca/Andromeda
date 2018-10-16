@@ -50,6 +50,6 @@ public:
 	friend EXPORT_SYMBOL std::ostream&  operator<<(std::ostream& os, const QDate& dt);
 	
 };
-
+    std::ostream&  operator<<(std::ostream& os, const QDate& dt);
 	
 }
