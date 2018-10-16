@@ -1,9 +1,10 @@
 #pragma once
+#include "libdef.h"
 #include "Calendar.h"
 
 namespace qtime
 {
-	class BusinessDayConvention
+	class EXPORT_SYMBOL BusinessDayConvention
 	{
 	public:
 		enum class TYPE {

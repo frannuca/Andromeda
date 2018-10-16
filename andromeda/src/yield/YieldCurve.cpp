@@ -86,12 +86,11 @@ double yield::YieldCurve::rate(const qtime::QDate& t)
 
 double yield::YieldCurve::forward(const qtime::QDate& td1, qtime::Tenor<qtime::SDAY> ndays)
 {
-	auto t1 = qtime::to_years(qtime::Tenor<qtime::SDAY>(td1- t0_));
-		
+	auto t1 = dc_->yearfraction(t0_, td1);		
 	auto dt2 = qtime::to_years(ndays);
 	auto t2 = t1 + dt2;
 	
-	return log(exp(compute_rate(t2)*t2 - compute_rate(t1)*t1)) / (t2 - t1);
+	return log(exp(compute_rate(t2)*t2 - compute_rate(t1)*t1)) / dt2;
 	/*1 / (1 + f * dt)*exp(-r1 * t1) = exp(-r2 * t2)
 		1 +exp( f * dt) = exp(r2*t2 - r1 * t1)
 		f *dt = ln(exp(r2*t2 - r1 * t1) - 1);*/

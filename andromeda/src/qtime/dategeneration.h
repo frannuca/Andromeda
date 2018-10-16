@@ -1,7 +1,8 @@
 #pragma once
+#include "libdef.h"
 namespace qtime
 {
-	struct DateGeneration {
+	struct EXPORT_SYMBOL DateGeneration {
 		enum Rule {
 			Backward,       /*!< Backward from termination date to
 								 effective date. */

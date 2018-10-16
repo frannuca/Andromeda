@@ -1,4 +1,5 @@
 #pragma once
+#include "libdef.h"
 #include "QDate.h"
 #include "tenor.h"
 #include "dategeneration.h"
@@ -7,7 +8,7 @@
 namespace qtime
 {
 	class BusinessDayConvention;
-	class Calendar;
+	class EXPORT_SYMBOL Calendar;
 
 	class Schedule
 	{
