@@ -20,6 +20,10 @@ int main(int argc, const char **argv) {
 	points.push_back(std::make_pair("two", 2.0));
 	points.push_back(std::make_pair("three", 3.0));
 	data::Series<std::string, double, ByLength> series(points);
+
+	auto keys = series.Index();
+	auto values = series.Values();
+	//data::Series<std::string, double, ByLength> movedseries(std::move(series));
 	/*auto a = frame(0, 0);
 	auto frame_x2 = frame + frame;
 	auto b = frame_x2(0, 0);
