@@ -8,67 +8,175 @@
 #include <utility>
 #include <functional>
 #include <boost/optional.hpp>
+#include "storage.h"
+#include <set>
+#include <algorithm>
+#include <limits>
+#include <math.h> 
 
 namespace data
 {
 	using namespace std;
 			
 	template<typename K, typename V>
-	class Series: Has_AritmeticOps<V>, public:Storage<K,V>
+	class Series: Has_AritmeticOps<V>,  public Storage<K,V>
 	{		
 	public:
 		
-		using  TSeries = Series<K, V>;
-		
-		//ctors
-		Series();
-		explicit Series(TVEC& kv);	
-		Series(const TSeries& that);	
-		Series(TSeries&& that) noexcept;
+		using  TSeries = Series<K, V>;		
+		using Storage<K, V>::Storage;
+		using Storage<K, V>::operator=;
+		using Storage<K, V>::operator[];	
+			
+		void fillNaNs(const V& v);
+		void dropNaNs();
+		template<typename K_, typename V_>
+		friend Series<K_, V_> applyop(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs, std::function<V(const V&, const V&)> op);
+
+		template<typename K_, typename V_>
+		friend Series<K_, V_> operator+(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs);
+
+		template<typename K_, typename V_>
+		friend Series<K_, V_> operator-(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs);
+
+		template<typename K_, typename V_>
+		friend Series<K_, V_> operator*(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs);
+
+		template<typename K_, typename V_>
+		friend Series<K_, V_> operator*(const V_& lhs, const Series<K_, V_>& rhs);
+
+		template<typename K_, typename V_>
+		friend Series<K_, V_> operator*(const Series<K_, V_>& lhs, const V_& rhs);
+
+		template<typename K_, typename V_>
+		friend Series<K_, V_> operator*(const V_& lhs, const Series<K_, V_>& rhs);
+
+		template<typename K_, typename V_>
+		friend Series<K_, V_> operator/(const Series<K_, V_>& lhs, const V_& rhs);
 
 		
-		vector<K> Index();
-		vector<V> Values();
+		template<typename K_, typename V_>
+		friend Series<K_, V_> operator/(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs);
 
-		V& operator[](const K& k);
+		template<typename K_, typename V_>
+		friend Series<K_, V_> operator-(const Series<K_, V_>& rhs);
+
+		template<typename K_, typename V_>
+		friend Series<K_, V_> power(const Series<K_, V_>& s,const double& x);
+
+		
 	};
 
 	template <typename K, typename V>
-	Series<K, V>::Series():data(new TVEC())
+	void Series<K, V>::fillNaNs(const V& v)
 	{
+		for(int i= datacontainer->size()-1; i >=0 ; --i)
+		{
+			if((*datacontainer)[i].second != (*datacontainer)[i].second)
+			{
+				(*datacontainer)[i].second = v;
+			}
+		}
 	}
 
 	template <typename K, typename V>
-	Series<K, V>::Series(TVEC& kv): data(new TVEC())
+	void Series<K, V>::dropNaNs()
 	{
-		std::transform(kv.begin(), kv.end(), std::back_inserter(*data), [](auto x) {return x; });
+		for (int i = datacontainer->size() - 1; i >= 0; --i)
+		{
+			if ((*datacontainer)[i].second != (*datacontainer)[i].second)
+			{
+				datacontainer->erase(datacontainer->begin() + i);
+			}
+		}
 	}
 
-	template <typename K, typename V>
-	Series<K, V>::Series(const TSeries& that) : data(new TVEC())
-	{
-		std::transform(that.begin(), that.end(), std::back_inserter(*data), [](auto x) {return x; });
+	template<typename K, typename V>
+	Series<K, V> applyop(const Series<K, V>& lhs, const Series<K, V>& rhs, std::function<V(const V&,const V&)> op){
+		std::vector<std::pair<K, V>> vdata;
+		std::set<K> sindex1,sindex2;
+		std::vector<K> index1 = lhs.Index();
+		std::vector<K> index2 = rhs.Index();
+
+		sindex1.insert(index1.begin(), index1.end());
+		sindex2.insert(index2.begin(), index2.end());
+
+		std::vector<K> intersection,difference;
+		std::set_intersection(sindex1.begin(), sindex1.end(), sindex2.begin(), sindex2.end(), std::back_inserter(intersection));
+		std::set_symmetric_difference(sindex1.begin(), sindex1.end(), sindex2.begin(), sindex2.end(), std::back_inserter(difference));
+		for(auto n:intersection)
+		{
+			vdata.push_back(std::make_pair(n, op(rhs[n], lhs[n])));
+		}
+
+		for (auto n : difference)
+		{
+			vdata.push_back(std::make_pair(n, std::numeric_limits<V>::quiet_NaN()));
+		}
+		return Series<K, V>(vdata);
 	}
 
-	template <typename K, typename V>
-	Series<K, V>::Series(TSeries&& that) noexcept
-	{
-		data.reset(that.data.release());
+	template<typename K, typename V>
+	Series<K, V> applyop(const Series<K, V>& rhs, std::function<V(const V&)> op) {
+		std::vector<K> index2 = rhs.Index();		
+		std::vector<std::pair<K, V>> vdata;
+
+		for (auto n : index2)
+		{
+			vdata.push_back(std::make_pair(n, op(rhs[n])));
+		}	
+		return Series<K, V>(vdata);
 	}
 
-	template <typename K, typename V>
-	vector<K> Series<K, V>::Index()
-	{
-		std::vector<K> keys;
-		std::transform(begin(), end(), std::back_inserter(keys), [](const pair<K, V>* x) {return x->first; });
-		return keys;
+	template<typename K_, typename V_>
+	Series<K_, V_> operator+(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs){
+		return applyop<K_,V_>(lhs, rhs, [](const V_& a, const V_& b) {return a + b; });
 	}
 
-	template <typename K, typename V>
-	vector<V> Series<K, V>::Values()
-	{
-		std::vector<V> values;
-		std::transform(begin(), end(), std::back_inserter(values), [](const pair<K, V>* x) {return x->second; });
-		return values;
+	template<typename K_, typename V_>
+	Series<K_, V_> operator-(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs) {
+		return applyop<K_, V_>(lhs, rhs, [](const V_& a, const V_& b) {return a - b; });
 	}
+
+	template<typename K_, typename V_>
+	Series<K_, V_> operator-(const Series<K_, V_>& rhs) {
+		return applyop<K_, V_>(rhs, [](const V_& a) {return -a; });
+	}
+
+	template<typename K_, typename V_>
+	Series<K_, V_> operator*(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs) {
+		return applyop<K_, V_>(lhs, rhs, [](const V_& a, const V_& b) {return a * b; });
+	}
+
+	template<typename K_, typename V_>
+	Series<K_, V_> operator*(const V_& l, const Series<K_, V_>& rhs) {
+		return applyop<K_, V_>(rhs, [l](const V_& a) {return a * l; });
+	}
+
+	template<typename K_, typename V_>
+	Series<K_, V_> operator*(const Series<K_, V_>& lhs, const V_& l) {
+		return l * lhs;
+	}
+	
+	template<typename K_, typename V_>
+	Series<K_, V_> operator/(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs) {
+		return applyop<K_, V_>(lhs, rhs, [](const V_& a, const V_& b) {return a / b; });
+	}
+
+	template<typename K_, typename V_>
+	Series<K_, V_> operator/(const V_& l, const Series<K_, V_>& rhs) {
+		return applyop<K_, V_>(rhs, [l](const V_& a) {return l/a; });
+	}
+
+	template<typename K_, typename V_>
+	Series<K_, V_> operator/(const Series<K_, V_>& lhs, const V_& l) {
+		return applyop<K_, V_>(lhs, [l](const V_& a) {return  a/l; });
+	}
+
+	template<typename K_, typename V_>
+	Series<K_, V_> power(const Series<K_, V_>& s, const double& x)
+	{
+		return applyop<K_, V_>(s, [x](const V_& a) {return (V_)std::pow(double(a),double(x)) ; });
+	}
+
 }
