@@ -31,7 +31,7 @@ public:
 	Storage(Storage&& that) noexcept;
 	Storage(const Storage& that);
 	Storage(const TVEC& l);
-
+	explicit Storage(const TVEC&& l);
 	//members
 	ItemIterator begin() const { return datacontainer->begin(); }
 	ItemIterator end() const { return datacontainer->end(); }
@@ -39,11 +39,12 @@ public:
 	Storage& withdata(std::initializer_list<TPAIR> l);
 	Storage& withdata(const TVEC& l);
 	void sortIndex(std::function<bool(const K&, const K&)> fcomp);
-
+	size_t size() const;
 	std::pair<int, int> locate(const K& key) const;
 
 	std::vector<K> Index() const;
 	std::vector<V> Values() const;
+	bool empty() const;
 
 	bool hasIndex(const K& n) const;
 	void operator=(const Storage<K, V>& rhs);
@@ -51,6 +52,7 @@ public:
 	V& operator[](const K& k) const;
 
 	bool operator==(const Storage& rhs) const;
+	bool operator!=(const Storage& rhs) const;
 };
 
 template <typename K, typename V>
@@ -121,6 +123,12 @@ Storage<K, V>::Storage(const TVEC& l):datacontainer(new TVEC())
 }
 
 template <typename K, typename V>
+Storage<K, V>::Storage(const TVEC&& l) :datacontainer(new TVEC())
+{
+	datacontainer.reset(new TVEC(std::move(l)));
+}
+
+template <typename K, typename V>
 Storage<K, V>& Storage<K, V>::withdata(std::initializer_list<TPAIR> l)
 {
 	datacontainer->insert(datacontainer->end(), l.begin(), l.end());
@@ -139,6 +147,13 @@ void Storage<K, V>::sortIndex(std::function<bool(const K&, const K&)> fcomp)
 {
 	std::sort(datacontainer->begin(), datacontainer->end(), [fcomp](const TPAIR& lhs, const TPAIR& rhs) {return fcomp(lhs.first, rhs.first); });
 	fcomparer = fcomp;
+}
+
+template <typename K, typename V>
+size_t Storage<K, V>::size() const
+{
+	if (empty()) return 0;
+	else return datacontainer->size();
 }
 
 template <typename K, typename V>
@@ -171,6 +186,12 @@ std::vector<V> Storage<K, V>::Values() const
 	std::vector<V> values;
 	std::transform(begin(), end(), std::back_inserter(values), [](const TPAIR& x) {return x.second; });
 	return values;
+}
+
+template <typename K, typename V>
+bool Storage<K, V>::empty() const
+{
+	return datacontainer || datacontainer->size() == 0;
 }
 
 template <typename K, typename V>
@@ -225,6 +246,12 @@ bool Storage<K, V>::operator==(const Storage& rhs) const
 	}
 
 	return true;
+}
+
+template <typename K, typename V>
+bool Storage<K, V>::operator!=(const Storage& rhs) const
+{
+	return !(*this == rhs);
 }
 
 

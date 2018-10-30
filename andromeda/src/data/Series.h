@@ -28,8 +28,13 @@ namespace data
 		using Storage<K, V>::operator=;
 		using Storage<K, V>::operator[];	
 			
+		Series(Series&& s) noexcept;
+		Series(const Series& s);
 		void fillNaNs(const V& v);
 		void dropNaNs();
+		void fillInf(const V& v);
+		void dropInf();
+
 		template<typename K_, typename V_>
 		friend Series<K_, V_> applyop(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs, std::function<V(const V&, const V&)> op);
 
@@ -37,7 +42,16 @@ namespace data
 		friend Series<K_, V_> operator+(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs);
 
 		template<typename K_, typename V_>
+		friend Series<K_, V_> operator+(const V_& l, const Series<K_, V_>& rhs);
+
+		template<typename K_, typename V_>
 		friend Series<K_, V_> operator-(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs);
+
+		template<typename K_, typename V_>
+		friend Series<K_, V_> operator-(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs);
+
+		template<typename K_, typename V_>
+		friend Series<K_, V_> operator-(const V_& l, const Series<K_, V_>& rhs);
 
 		template<typename K_, typename V_>
 		friend Series<K_, V_> operator*(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs);
@@ -68,6 +82,16 @@ namespace data
 	};
 
 	template <typename K, typename V>
+	Series<K, V>::Series(Series&& s) noexcept	
+	{	
+		this->Storage<K, V>::datacontainer.reset(s.datacontainer.release());
+	}
+
+	template <typename K, typename V>
+	Series<K, V>::Series(const Series& s):Storage<K,V>(*s.datacontainer)
+	{}
+
+	template <typename K, typename V>
 	void Series<K, V>::fillNaNs(const V& v)
 	{
 		for(int i= datacontainer->size()-1; i >=0 ; --i)
@@ -91,6 +115,30 @@ namespace data
 		}
 	}
 
+	template <typename K, typename V>
+	void Series<K, V>::fillInf(const V& v)
+	{
+		for (int i = datacontainer->size() - 1; i >= 0; --i)
+		{
+			if ((*datacontainer)[i].second == std::numeric_limits<V>::infinity())
+			{
+				(*datacontainer)[i].second = v;
+			}
+		}
+	}
+
+	template <typename K, typename V>
+	void Series<K, V>::dropInf()
+	{
+		for (int i = datacontainer->size() - 1; i >= 0; --i)
+		{
+			if ((*datacontainer)[i].second == std::numeric_limits<V>::infinity())
+			{
+				datacontainer->erase(datacontainer->begin() + i);
+			}
+		}
+	}
+
 	template<typename K, typename V>
 	Series<K, V> applyop(const Series<K, V>& lhs, const Series<K, V>& rhs, std::function<V(const V&,const V&)> op){
 		std::vector<std::pair<K, V>> vdata;
@@ -106,7 +154,7 @@ namespace data
 		std::set_symmetric_difference(sindex1.begin(), sindex1.end(), sindex2.begin(), sindex2.end(), std::back_inserter(difference));
 		for(auto n:intersection)
 		{
-			vdata.push_back(std::make_pair(n, op(rhs[n], lhs[n])));
+			vdata.push_back(std::make_pair(n, op(lhs[n], rhs[n])));
 		}
 
 		for (auto n : difference)
@@ -134,8 +182,28 @@ namespace data
 	}
 
 	template<typename K_, typename V_>
+	Series<K_, V_> operator+(const V_& l, const Series<K_, V_>& rhs) {
+		return applyop<K_, V_>(rhs, [l](const V_& a) {return a + l; });
+	}
+
+	template<typename K_, typename V_>
+	Series<K_, V_> operator+(const Series<K_, V_>& rhs, const V_& l ) {
+		return l + rhs;
+	}
+
+	template<typename K_, typename V_>
 	Series<K_, V_> operator-(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs) {
 		return applyop<K_, V_>(lhs, rhs, [](const V_& a, const V_& b) {return a - b; });
+	}
+
+	template<typename K_, typename V_>
+	Series<K_, V_> operator-(const V_& l, const Series<K_, V_>& rhs) {
+		return applyop<K_, V_>(rhs, [l](const V_& a) {return l - a ; });
+	}
+
+	template<typename K_, typename V_>
+	Series<K_, V_> operator-(const Series<K_, V_>& rhs, const V_& l) {
+		return applyop<K_, V_>(rhs, [l](const V_& a) {return a - l; });
 	}
 
 	template<typename K_, typename V_>
