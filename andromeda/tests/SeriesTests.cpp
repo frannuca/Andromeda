@@ -34,7 +34,7 @@ vector<pair<QDate,double>> GetSeriesData()
 BOOST_AUTO_TEST_CASE(SERIES)
 {
 	auto data = GetSeriesData();
-
+	cout<<("Constructor tests")<<endl;	
 	//checking constructors
 	{
 		//Testing Series ctor:
@@ -51,6 +51,7 @@ BOOST_AUTO_TEST_CASE(SERIES)
 				
 	}
 	
+	cout<<("Operators tests (3 + series1)-series1 equals 3")<<endl;
 	//operators sum, substraction
 	{
 		
@@ -64,6 +65,7 @@ BOOST_AUTO_TEST_CASE(SERIES)
 
 	}
 
+	std::cout<<("Operators tests (3*series1)/series1 equals 3")<<std::endl;
 	//operators product, division
 	{
 
@@ -74,11 +76,26 @@ BOOST_AUTO_TEST_CASE(SERIES)
 		series3.fillInf(3.0);
 		for (auto x : series3)
 		{
-			BOOST_CHECK_CLOSE(x.second, 3.0, 1e-12);
+			BOOST_CHECK_CLOSE_FRACTION(x.second, 3.0, 1e-12);
 		}
 
 	}
 
+	std::cout<<("Operators tests (series1)**3/(series1*series1*series1) equals 1")<<std::endl;
+	//operators power
+	{
+
+		Series<QDate, double> series1(data);
+		Series<QDate, double> series2 = power(series1, 3.0);
+		Series<QDate, double> series3 = series1 * series1 * series1;
+		Series<QDate, double> series4 = series2 / series3;
+		series4.fillNaNs(1.0);
+		for (auto x : series4)
+		{
+			BOOST_CHECK_CLOSE(x.second, 1.0, 1e-12);
+		}
+
+	}
 	//starting checks on access:
 	//Series<QDate,double> 
 }
