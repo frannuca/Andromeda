@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "libdef.h"
+#include "../inc/libdef.h"
 #include "../instrument/Instrument.h"
 #include "../qtime/QDate.h"
 #include <vector>

@@ -2,15 +2,27 @@ project(tests)
 add_definitions(-DARMA_USE_BLAS)
 add_definitions(-DARMA_USE_LAPACK)
 
-file(GLOB SOURCES  ${CMAKE_SOURCE_DIR}/andromeda/tests/*.cpp )
-file(GLOB HEADERS ${CMAKE_SOURCE_DIR}/andromeda/inc/libdef.h
-			      ${CMAKE_SOURCE_DIR}/andromeda/src/*.h 
-				  ${CMAKE_SOURCE_DIR}/andromeda/src/qtime/*.h
-				   ${CMAKE_SOURCE_DIR}/andromeda/src/yield/*.h
-				   ${CMAKE_SOURCE_DIR}/andromeda/src/instrument/*.h)
+file(GLOB SOURCES  ${CMAKE_SOURCE_DIR}/tests/*.cpp )
+file(GLOB HEADERS ${CMAKE_SOURCE_DIR}/inc/libdef.h
+			      ${CMAKE_SOURCE_DIR}/src/*.h 
+				  ${CMAKE_SOURCE_DIR}/src/qtime/*.h
+				   ${CMAKE_SOURCE_DIR}/src/yield/*.h
+				   ${CMAKE_SOURCE_DIR}/src/instrument/*.h)
 
-message(STATUS "/////////////////////////" ${SOURCES})
-message(STATUS "/////////////////////////" ${HEADERS})
+message(STATUS "///////////CMAKE_SOURCE_DIR=" ${CMAKE_SOURCE_DIR})
+message(STATUS "SOURCES")
+foreach(testSrc ${SOURCES})
+        #Extract the filename without an extension (NAME_WE)
+        get_filename_component(testName ${testSrc} NAME_WE)
+		message(STATUS "->" ${testName}.cpp)
+endforeach(testSrc)
+message(STATUS "HEADERS")
+foreach(testSrc ${HEADERS})
+        #Extract the filename without an extension (NAME_WE)
+        get_filename_component(testName ${testSrc} NAME_WE)
+		message(STATUS "->" ${testName}.h)
+endforeach(testSrc)
+
 
 if(WIN32)
 	message(STATUS "------------------:configuring windows")
@@ -52,7 +64,7 @@ message(STATUS ${Boost_LIBRARIES})
 message(STATUS "Boost_LIBRARY_DIRS")
 message(STATUS ${Boost_LIBRARY_DIRS})
 
-include_directories( ${Boost_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/andromeda/inc ${ARMADILLO_INCLUDE} ${MKL_INCLUDE})
+include_directories( ${Boost_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/andromeda/inc ${CMAKE_SOURCE_DIR}/andromeda/src ${ARMADILLO_INCLUDE} ${MKL_INCLUDE})
 link_directories(${Boost_LIBRARY_DIRS} ${MKL_LIB} ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}  ${ARMADILLO_LIBS})
 
 
@@ -63,7 +75,7 @@ foreach(testSrc ${SOURCES})
 	
         #Add compile target
         add_executable(${testName} ${testSrc})
-		
+		add_dependencies(${testName} andromeda)
         #link to Boost libraries AND your targets and dependencies
         #target_link_libraries(${testName} ${Boost_LIBRARIES} mkl_intel_ilp64_dll.lib mkl_sequential_dll.lib mkl_core_dll.lib blas_win64_MT.lib lapack_win64_MT.lib andromeda)
    	    target_link_libraries(${testName} ${Boost_LIBRARIES} blas_win64_MT.lib lapack_win64_MT.lib andromeda)
@@ -73,17 +85,17 @@ foreach(testSrc ${SOURCES})
                  WORKING_DIRECTORY ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}
                  COMMAND ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/${testName} )
 
-	#	add_custom_command(TARGET ${testName} POST_BUILD        # Adds a post-build event to MyTest
-	#		COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
-    #    "${MKL_DLL}/mkl_sequential.dll"      # <--this is in-file
-    #    ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})                 # <--this is out-file path
-	#
-	#	
-	#
-	#	add_custom_command(TARGET ${testName} POST_BUILD        # Adds a post-build event to MyTest
-	#		COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
-    #    "${MKL_DLL}/mkl_core.dll"      # <--this is in-file
-    #    ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})                 # <--this is out-file path
+		add_custom_command(TARGET ${testName} POST_BUILD        # Adds a post-build event to MyTest
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
+        "${MKL_DLL}/mkl_sequential.dll"      # <--this is in-file
+        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})                 # <--this is out-file path
+	
+		
+	
+		add_custom_command(TARGET ${testName} POST_BUILD        # Adds a post-build event to MyTest
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
+        "${MKL_DLL}/mkl_core.dll"      # <--this is in-file
+        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})                 # <--this is out-file path
 
 		add_custom_command(TARGET ${testName} POST_BUILD        # Adds a post-build event to MyTest
 			COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."

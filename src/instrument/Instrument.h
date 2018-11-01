@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "libdef.h"
+#include "../inc/libdef.h"
 #include "../qtime/QDate.h"
 #include "../qtime/DayCounter.h"
 #include <boost/optional.hpp>
