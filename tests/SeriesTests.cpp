@@ -7,6 +7,8 @@
 #include <utility>
 #include "../src/data/Series.h"
 #include <random>
+#include "../src/data/Frame.h"
+
 using namespace std;
 using namespace data;
 using namespace qtime;
@@ -35,19 +37,26 @@ BOOST_AUTO_TEST_CASE(SERIES)
 {
 	auto data = GetSeriesData();
 	cout<<("Constructor tests")<<endl;	
+	{
+		Series<QDate, double> series1(data);
+	}
+	
+
 	//checking constructors
 	{
 		//Testing Series ctor:
 		Series<QDate, double> series1(data);
 		Series<QDate, double> series2;
 		series2.withdata(data);
+		Series<QDate, double> series2b = data;
 		BOOST_CHECK_MESSAGE(series1 == series2, "Construction of series failed");
+		BOOST_CHECK_MESSAGE(series1 == series2b, "Copy Construction of series failed");
 
 		Series<QDate, double> series3(data);
 		Series<QDate, double> series4 = std::move(series3);
-		
+		/*\
 		BOOST_CHECK_MESSAGE(series4.empty(), "After moving operand the object is not empty");
-		BOOST_CHECK_MESSAGE(series1 == series4, "Moved copy contructor did not copy data correctly");
+		BOOST_CHECK_MESSAGE(series1 == series4, "Moved copy contructor did not copy data correctly");*/
 				
 	}
 	
@@ -94,8 +103,80 @@ BOOST_AUTO_TEST_CASE(SERIES)
 		{
 			BOOST_CHECK_CLOSE(x.second, 1.0, 1e-12);
 		}
+	}
+
+	std::cout << ("Operators tests -s + s equals 0") << std::endl;
+	//operators negation
+	{
+
+		Series<QDate, double> series1(data);		
+		Series<QDate, double> series2 = -series1 + series1;		
+		for (auto x : series2)
+		{
+			BOOST_CHECK_CLOSE(x.second, 0.0, 1e-12);
+		}
+	}
+
+	std::cout << ("sortting on keys") << std::endl;	
+	{
+
+		Series<QDate, double> series1(data);
+		auto comparator_lt = [](const QDate& a, const QDate& b) {return a < b; };
+		auto comparator_gt = [](const QDate& a, const QDate& b) {return a > b; };
+		series1.sortIndex(comparator_lt);
+		auto keys = series1.Index();
+		for (int i=1;i<keys.size();++i)
+		{
+			BOOST_CHECK_LT(keys[i-1], keys[i]);
+		}
+
+
+		series1.sortIndex(comparator_gt);
+		keys = series1.Index();
+		for (int i = 1; i < keys.size(); ++i)
+		{
+			BOOST_CHECK_GT(keys[i - 1], keys[i]);
+		}
+	}
+
+	std::cout << ("Subview tests") << std::endl;
+	//subviews
+	{
+		Series<QDate, double> series1(data);
+		{
+			double refx = series1[t0 + 20];
+			auto view1_3 = series1.subview({ t0,t0 + 1,t0 + 2,t0 + 20 });
+			view1_3[t0 + 20] = 20;
+			
+			BOOST_CHECK_EQUAL(series1[t0 + 20], 20);
+
+			auto view1_3copy = series1.subviewCopy({ t0,t0 + 1,t0 + 2,t0 + 20 });
+			view1_3[t0 + 20] = 20;
+			BOOST_CHECK_EQUAL(series1[t0 + 20], refx);
+		}
+
+		auto a0 = series1[t0];
+		auto a1 = series1[t0+1];
+		auto a2 = series1[t0 + 2];
+		auto a20 = series1[t0 + 20];
+		
 
 	}
-	//starting checks on access:
-	//Series<QDate,double> 
+
+	cout << "Frame ctor" << endl;
+	{
+		Frame<string, qtime::QDate, double> frame;
+		Series<QDate, double> series1(data);
+		Series<QDate, double> series2(data);
+		frame.withSeries("series1", series1)
+			 .withSeries("series2", series2);
+		
+		Series<qtime::QDate, double>& col2 = frame.col("series2");
+		
+		
+		
+
+		
+	}
+
 }

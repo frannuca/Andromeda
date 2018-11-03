@@ -17,10 +17,10 @@ public:
 	using ItemIterator = typename TVEC::iterator;
 
 protected:
-	std::unique_ptr<TVEC> datacontainer;
+	std::shared_ptr<TVEC> datacontainer;
 	boost::optional<std::function<bool(const K&, const K&)>> fcomparer;
 
-private:
+protected:
 	std::pair<int,int>  binary_search(const K& key) const;
 	std::pair<int, int> linear_search(const K& key) const;
 
@@ -31,11 +31,14 @@ public:
 	Storage(Storage&& that) noexcept;
 	Storage(const Storage& that);
 	Storage(const TVEC& l);
-	explicit Storage(const TVEC&& l);
+	Storage(const TVEC&& l);
+	virtual ~Storage()
+	{	
+	}
 	//members
 	ItemIterator begin() const { return datacontainer->begin(); }
 	ItemIterator end() const { return datacontainer->end(); }
-
+	
 	Storage& withdata(std::initializer_list<TPAIR> l);
 	Storage& withdata(const TVEC& l);
 	void sortIndex(std::function<bool(const K&, const K&)> fcomp);
@@ -50,7 +53,7 @@ public:
 	void operator=(const Storage<K, V>& rhs);
 	void operator=(Storage<K, V>&& rhs) noexcept;
 	V& operator[](const K& k) const;
-
+	std::pair<K, V>& getdatapair(const K& k) const;
 	bool operator==(const Storage& rhs) const;
 	bool operator!=(const Storage& rhs) const;
 };
@@ -107,7 +110,7 @@ Storage<K, V>::Storage(): datacontainer(new std::vector<std::pair<K, V>>())
 template <typename K, typename V>
 Storage<K, V>::Storage(Storage&& that) noexcept
 {
-	datacontainer.reset(that.datacontainer.release());
+	datacontainer.swap(that.datacontainer);	
 }
 
 template <typename K, typename V>
@@ -117,9 +120,9 @@ Storage<K, V>::Storage(const Storage& that)
 }
 
 template <typename K, typename V>
-Storage<K, V>::Storage(const TVEC& l):datacontainer(new TVEC())
+Storage<K, V>::Storage(const TVEC& l)
 {
-	datacontainer->insert(datacontainer->end(), l.begin(), l.end());	
+	datacontainer.reset(new TVEC(l));
 }
 
 template <typename K, typename V>
@@ -127,6 +130,7 @@ Storage<K, V>::Storage(const TVEC&& l) :datacontainer(new TVEC())
 {
 	datacontainer.reset(new TVEC(std::move(l)));
 }
+
 
 template <typename K, typename V>
 Storage<K, V>& Storage<K, V>::withdata(std::initializer_list<TPAIR> l)
@@ -204,28 +208,36 @@ bool Storage<K, V>::hasIndex(const K& n) const
 template <typename K, typename V>
 void Storage<K, V>::operator=(const Storage<K, V>& rhs)
 {
-	datacontainer.reset(new TVEC(*rhs.datacontainer));	
+	datacontainer(new TVEC(*rhs.datacontainer));	
 }
 
 template <typename K, typename V>
 void Storage<K, V>::operator=(Storage<K, V>&& rhs) noexcept
 {
-	datacontainer.reset(new TVEC(*rhs.datacontainer.release()));
+	datacontainer = rhs.datacontainer;
+	rhs.datacontainer = nullptr;
 }
 
 template <typename K, typename V>
 V& Storage<K, V>::operator[](const K& k) const
 {
+	return getdatapair(k).second;
+}
+
+template <typename K, typename V>
+std::pair<K, V>& Storage<K, V>::getdatapair(const K& k) const
+{
 	int l, h;
 	std::tie(l, h) = locate(k);
-	if(l==h)
+	if (l == h)
 	{
-		return (*datacontainer)[l].second;
+		return (*datacontainer)[l];
 	}
 	else
 	{
 		throw "not implemented";
 	}
+
 }
 
 template <typename K, typename V>

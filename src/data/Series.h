@@ -19,77 +19,44 @@ namespace data
 	using namespace std;
 			
 	template<typename K, typename V>
-	class Series: Has_AritmeticOps<V>,  public Storage<K,V>
+	class Series: public Storage<K,V>
 	{		
 	public:
-		
-		using  TSeries = Series<K, V>;		
+		virtual ~Series();
+		using TSeries = Series<K, V>;		
 		using Storage<K, V>::Storage;
 		using Storage<K, V>::operator=;
 		using Storage<K, V>::operator[];	
-			
+		Series():Storage<K,V>() {};
 		Series(Series&& s) noexcept;
 		Series(const Series& s);
 		void fillNaNs(const V& v);
 		void dropNaNs();
 		void fillInf(const V& v);
 		void dropInf();
-
-		template<typename K_, typename V_>
-		friend Series<K_, V_> applyop(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs, std::function<V(const V&, const V&)> op);
-
-		template<typename K_, typename V_>
-		friend Series<K_, V_> operator+(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs);
-
-		template<typename K_, typename V_>
-		friend Series<K_, V_> operator+(const V_& l, const Series<K_, V_>& rhs);
-
-		template<typename K_, typename V_>
-		friend Series<K_, V_> operator-(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs);
-
-		template<typename K_, typename V_>
-		friend Series<K_, V_> operator-(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs);
-
-		template<typename K_, typename V_>
-		friend Series<K_, V_> operator-(const V_& l, const Series<K_, V_>& rhs);
-
-		template<typename K_, typename V_>
-		friend Series<K_, V_> operator*(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs);
-
-		template<typename K_, typename V_>
-		friend Series<K_, V_> operator*(const V_& lhs, const Series<K_, V_>& rhs);
-
-		template<typename K_, typename V_>
-		friend Series<K_, V_> operator*(const Series<K_, V_>& lhs, const V_& rhs);
-
-		template<typename K_, typename V_>
-		friend Series<K_, V_> operator*(const V_& lhs, const Series<K_, V_>& rhs);
-
-		template<typename K_, typename V_>
-		friend Series<K_, V_> operator/(const Series<K_, V_>& lhs, const V_& rhs);
-
-		
-		template<typename K_, typename V_>
-		friend Series<K_, V_> operator/(const Series<K_, V_>& lhs, const Series<K_, V_>& rhs);
-
-		template<typename K_, typename V_>
-		friend Series<K_, V_> operator-(const Series<K_, V_>& rhs);
-
-		template<typename K_, typename V_>
-		friend Series<K_, V_> power(const Series<K_, V_>& s,const double& x);
-
+		Series<K, V&> subview(const std::vector<K> keys);
+		Series<K, V> subviewCopy(const std::vector<K> keys);
+		void operator=(const Series<K, V>& that);
+		void operator=(Series<K, V>&& that) noexcept;		
 		
 	};
-
+		
 	template <typename K, typename V>
-	Series<K, V>::Series(Series&& s) noexcept	
-	{	
-		this->Storage<K, V>::datacontainer.reset(s.datacontainer.release());
+	Series<K, V>::~Series()
+	{
 	}
 
 	template <typename K, typename V>
-	Series<K, V>::Series(const Series& s):Storage<K,V>(*s.datacontainer)
-	{}
+	Series<K, V>::Series(Series&& s) noexcept	
+	{			
+		this->Storage<K, V>::datacontainer.swap(s.datacontainer);		
+	}
+
+	template <typename K, typename V>
+	Series<K, V>::Series(const Series& s)
+	{
+		this->Storage<K, V>::datacontainer = s.datacontainer;
+	}
 
 	template <typename K, typename V>
 	void Series<K, V>::fillNaNs(const V& v)
@@ -137,6 +104,40 @@ namespace data
 				datacontainer->erase(datacontainer->begin() + i);
 			}
 		}
+	}
+
+	template <typename K, typename V>
+	Series<K, V&> Series<K, V>::subview(const std::vector<K> keys)
+	{
+		typename std::vector<std::pair<K, V&>> subdata;
+		for(K k:keys)
+		{			
+			subdata.push_back(pair<K,V&>(k,((*this)[k])));
+		}	
+		return Series<K, V&>(subdata);
+	}
+
+	template <typename K, typename V>
+	Series<K, V> Series<K, V>::subviewCopy(const std::vector<K> keys)
+	{
+		typename std::vector<std::pair<K, V>> subdata;
+		for (K k : keys)
+		{
+			subdata.push_back(pair<K, V>(k, ((*this)[k])));
+		}
+		return Series<K, V>(subdata);
+	}
+
+	template <typename K, typename V>
+	void Series<K, V>::operator=(const Series<K, V>& that)
+	{
+		this->Storage<K,V>::datacontainer=(new std::vector<K, V>(*(that.datacontainer)));
+	}
+
+	template <typename K, typename V>
+	void Series<K, V>::operator=(Series<K, V>&& that) noexcept
+	{
+		this->Storage<K, V>::datacontainer.swap(that.datacontainer);		
 	}
 
 	template<typename K, typename V>

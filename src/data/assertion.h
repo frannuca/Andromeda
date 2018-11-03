@@ -20,3 +20,6 @@ template<class T1> struct Has_AritmeticOps {
 	static void constraints(T1 a) { T1 c = (a * a + a)/a-a; }
 	Has_AritmeticOps() { void(*p)(T1) = constraints; }
 };
+
+template<class T1> struct Dummy_AritmeticOps {	
+};
