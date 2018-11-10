@@ -8,6 +8,8 @@
 #include "../src/data/Series.h"
 #include <random>
 #include "../src/data/Frame.h"
+#include <chrono>
+//#include "../src/data/Frame.h"
 
 using namespace std;
 using namespace data;
@@ -18,7 +20,7 @@ typedef std::mt19937 MyRNG;
 
 QDate t0(01, 01, 2001);
 
-vector<pair<QDate,double>> GetSeriesData()
+vector<pair<QDate,double>> GetSeriesData(bool odd=false)
 {
 	uint32_t seed_val = 42;
 	std::uniform_int_distribution<unsigned int> u_dist(0,100);
@@ -27,23 +29,48 @@ vector<pair<QDate,double>> GetSeriesData()
 	srand(time(nullptr));
 	vector<pair<QDate, double>> x;
 	
-	int nt = 1000;
-	for (int i = 0; i < nt; ++i) x.push_back(make_pair(t0 + i, u_dist(rng)));
+	int nt = 100000;
+	if(odd)
+	{
+		for (int i = 0; i < nt; ++i) if (i%2==0) x.push_back(make_pair(t0 + i, u_dist(rng)));
+	}
+	else
+	{
+		for (int i = 0; i < nt; ++i) x.push_back(make_pair(t0 + i, u_dist(rng)));
+	}
+
 
 	return x;
-}
+};
+
+
+
 
 BOOST_AUTO_TEST_CASE(SERIES)
 {
 	auto data = GetSeriesData();
+	auto data2 = GetSeriesData(true);
+
+
+	
 	cout<<("Constructor tests")<<endl;	
 	{
+		chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
+
 		Series<QDate, double> series1(data);
+
+		chrono::high_resolution_clock::time_point t2 = chrono::high_resolution_clock::now();
+		auto duration = chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
+
+		cout<<"time=" << duration;
+
 	}
 	
 
 	//checking constructors
 	{
+		chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
+
 		//Testing Series ctor:
 		Series<QDate, double> series1(data);
 		Series<QDate, double> series2;
@@ -54,10 +81,15 @@ BOOST_AUTO_TEST_CASE(SERIES)
 
 		Series<QDate, double> series3(data);
 		Series<QDate, double> series4 = std::move(series3);
-		/*\
+		
 		BOOST_CHECK_MESSAGE(series4.empty(), "After moving operand the object is not empty");
-		BOOST_CHECK_MESSAGE(series1 == series4, "Moved copy contructor did not copy data correctly");*/
-				
+		BOOST_CHECK_MESSAGE(series1 == series4, "Moved copy contructor did not copy data correctly");
+		
+		chrono::high_resolution_clock::time_point t2 = chrono::high_resolution_clock::now();
+		auto duration = chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
+
+		cout << "time=" << duration;
+
 	}
 	
 	cout<<("Operators tests (3 + series1)-series1 equals 3")<<endl;
@@ -69,7 +101,7 @@ BOOST_AUTO_TEST_CASE(SERIES)
 		Series<QDate, double> series3 = series2 - series1;
 		for(auto x: series3)
 		{
-			BOOST_CHECK_EQUAL(x.second,3.0, "Operator scalar multiplication with substraction failed");
+			BOOST_CHECK_EQUAL(x.second,3.0);
 		}
 
 	}
@@ -152,7 +184,7 @@ BOOST_AUTO_TEST_CASE(SERIES)
 
 			auto view1_3copy = series1.subviewCopy({ t0,t0 + 1,t0 + 2,t0 + 20 });
 			view1_3[t0 + 20] = 20;
-			BOOST_CHECK_EQUAL(series1[t0 + 20], refx);
+			BOOST_CHECK_NE(series1[t0 + 20], refx);
 		}
 
 		auto a0 = series1[t0];
@@ -167,16 +199,47 @@ BOOST_AUTO_TEST_CASE(SERIES)
 	{
 		Frame<string, qtime::QDate, double> frame;
 		Series<QDate, double> series1(data);
-		Series<QDate, double> series2(data);
+		Series<QDate, double> series2(data2);
+		
 		frame.withSeries("series1", series1)
 			 .withSeries("series2", series2);
 		
-		Series<qtime::QDate, double>& col2 = frame.col("series2");
-		
-		
-		
+		Series<qtime::QDate, double>& col1 = frame.col("series1");
+		Series<qtime::QDate, double>& col2 = frame.col("series2");		
+		std::vector<std::string> rind1,rind2;
+		auto i1 = frame.RowIndex();
+		std::transform(i1.begin(), i1.end(), std::back_inserter(rind1), [](const QDate& d) {return d.toString(); });
+		std::cout << "Droppting Sparse rows" << std::endl;
+		frame.DropSparseRows();		
+		std::cout << "Finished Droppting Sparse rows" << std::endl;
+		frame.sortRowsWith([](const QDate& d1, const QDate& d2) {return d1 > d2; });
 
-		
+		auto i2 = frame.RowIndex();
+		std::transform(i2.begin(), i2.end(), std::back_inserter(rind2), [](const QDate& d) {return d.toString(); });
+
 	}
 
+	cout << "Frame ctor 2" << endl;
+	{
+		Frame<string, qtime::QDate, double> frame;
+		Series<QDate, double> series1(data);
+		Series<QDate, double> series2(data2);
+
+		frame.withSeries("series1", series1)
+			.withSeries("series2", series2);
+
+		Series<qtime::QDate, double>& col1 = frame.col("series1");
+		Series<qtime::QDate, double>& col2 = frame.col("series2");
+		std::vector<std::string> rind1, rind2;
+		auto i1 = frame.RowIndex();
+		std::transform(i1.begin(), i1.end(), std::back_inserter(rind1), [](const QDate& d) {return d.toString(); });
+		std::cout << "Filling Sparse rows" << std::endl;
+		frame.FillSparseWith(std::numeric_limits<double>::quiet_NaN());
+		std::cout << "Finished Filling Sparse rows" << std::endl;
+		frame.sortRowsWith([](const QDate& d1, const QDate& d2) {return d1 > d2; });
+
+		auto i2 = frame.RowIndex();
+		std::transform(i2.begin(), i2.end(), std::back_inserter(rind2), [](const QDate& d) {return d.toString(); });
+
+	}
 }

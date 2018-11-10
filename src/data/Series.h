@@ -170,9 +170,9 @@ namespace data
 		std::vector<K> index2 = rhs.Index();		
 		std::vector<std::pair<K, V>> vdata;
 
-		for (auto n : index2)
+		for (const std::pair<K,V>& dpair: rhs)
 		{
-			vdata.push_back(std::make_pair(n, op(rhs[n])));
+			vdata.push_back(std::make_pair(dpair.first, op(dpair.second)));
 		}	
 		return Series<K, V>(vdata);
 	}

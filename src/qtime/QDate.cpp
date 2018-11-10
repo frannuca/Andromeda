@@ -43,6 +43,11 @@ qtime::QDate::~QDate() {
 	delete _d;
 }
 
+std::string qtime::QDate::toString() const
+{
+	return to_simple_string(*_d);
+}
+
 qtime::QDate qtime::QDate::MonthEnd() const
 {
 	auto d = _d->end_of_month();

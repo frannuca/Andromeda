@@ -14,10 +14,12 @@ set(ARMADILLO_INCLUDE "C:/Users/fran/source/github/armadillo-9.100.5/include/")
 set(ARMADILLO_LIBS "C:/Users/fran/source/github/armadillo-9.100.5/examples/lib_win64/")
 
 if(WIN32)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHc /std:c++17")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHc /std:c++17 /wd4244 /wd4267")
 else()
     set (CMAKE_CXX_STANDARD 17)
 endif()
 
 add_subdirectory ("src")
 add_subdirectory ("tests")
+
+#C4244

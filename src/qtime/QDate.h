@@ -32,7 +32,7 @@ public:
 	//dtor
 	~QDate();
 
-		
+	std::string toString() const;
 	QDate MonthEnd() const;
 	QDate operator+(int days) const;
 	QDate operator-(int days) const;

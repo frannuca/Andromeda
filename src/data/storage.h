@@ -7,9 +7,21 @@
 #include <iterator>
 #include <vector>
 #include <set>
+#include <algorithm>
+
+template<typename K>
+struct IndexComparer
+{
+	boost::optional<std::function<bool(const K&, const K&)>> fcomparer;
+
+	IndexComparer()
+	{
+		fcomparer = [](const K& a, const K& b) {return a < b; };
+	}
+};
 
 template<typename K, typename V>
-class Storage
+class Storage:protected IndexComparer<K>
 {
 public:
 	using TPAIR = std::pair<K, V>;
@@ -18,7 +30,7 @@ public:
 
 protected:
 	std::shared_ptr<TVEC> datacontainer;
-	boost::optional<std::function<bool(const K&, const K&)>> fcomparer;
+	
 
 protected:
 	std::pair<int,int>  binary_search(const K& key) const;
@@ -41,7 +53,9 @@ public:
 	
 	Storage& withdata(std::initializer_list<TPAIR> l);
 	Storage& withdata(const TVEC& l);
+	void dropItems(const std::vector<K>& keys);
 	void sortIndex(std::function<bool(const K&, const K&)> fcomp);
+	void sortIndex();
 	size_t size() const;
 	std::pair<int, int> locate(const K& key) const;
 
@@ -63,26 +77,35 @@ std::pair<int,int> Storage<K, V>::binary_search(const K& key) const
 {
 	int l = 0, h = datacontainer->size()-1;
 	int m = (h + l)*0.5;
-	int maxiter = h + 1;
+	int maxiter = h + 10;
 	int counter = 0;
 	while(l<h && ++counter<maxiter)
 	{		
-		auto xl = (*datacontainer)[l].first;
-		auto xm = (*datacontainer)[m].first;
-		auto xh = (*datacontainer)[h].first;
+		K xl = (*datacontainer)[l].first;
+		K xm = (*datacontainer)[m].first;
+		K xh = (*datacontainer)[h].first;
 		if(xm==key)
 		{
 			l = m;
 			h = m;
 		}
+		else if(xl == key)
+		{			
+			h = l;
+		}
+		else if(xh == key)
+		{
+			l = h;			
+		}
 		else if((*fcomparer)(key,xm))
 		{
-			h=m;
+			h = m;
 		}
 		else
 		{
 			l = m;
 		}
+		m = 0.5*(l + h);
 	}
 
 	return std::make_pair(l,h);
@@ -136,6 +159,7 @@ template <typename K, typename V>
 Storage<K, V>& Storage<K, V>::withdata(std::initializer_list<TPAIR> l)
 {
 	datacontainer->insert(datacontainer->end(), l.begin(), l.end());
+	sortIndex();
 	return *this;
 }
 
@@ -143,14 +167,43 @@ template <typename K, typename V>
 Storage<K, V>& Storage<K, V>::withdata(const TVEC& l)
 {
 	datacontainer->insert(datacontainer->end(), l.begin(), l.end());
+	sortIndex();
 	return *this;
 }
+
+template <typename K, typename V>
+void Storage<K, V>::dropItems(const std::vector<K>& keys)
+{
+	for(auto k:keys)
+	{
+		if(hasIndex(k))
+		{
+			auto item = std::find_if(datacontainer->begin(), datacontainer->end(), [&k](const std::pair<K, V>& z) {return k == z.first; });
+			if(item!=datacontainer->end())
+			{
+				datacontainer->erase(item);
+			}
+		}
+	}
+}
+
+
 
 template <typename K, typename V>
 void Storage<K, V>::sortIndex(std::function<bool(const K&, const K&)> fcomp)
 {
 	std::sort(datacontainer->begin(), datacontainer->end(), [fcomp](const TPAIR& lhs, const TPAIR& rhs) {return fcomp(lhs.first, rhs.first); });
 	fcomparer = fcomp;
+}
+
+template <typename K, typename V>
+void Storage<K, V>::sortIndex()
+{	
+	if(!fcomparer)
+	{
+		fcomparer = [](const K& a, const K& b) {return a < b; };
+	}
+	std::sort(datacontainer->begin(), datacontainer->end(), [this](const TPAIR& lhs, const TPAIR& rhs) {return (fcomparer.get())(lhs.first, rhs.first); });
 }
 
 template <typename K, typename V>
@@ -250,11 +303,13 @@ bool Storage<K, V>::operator==(const Storage& rhs) const
 	if (!datacontainer || !(rhs.datacontainer)) return false;
 
 	if(datacontainer->size() != datacontainer->size()) return false;
-	auto index = Index();
-	for(auto k:index)
-	{
-		if(!rhs.hasIndex(k)) return false;
-		if(this->operator[](k) != rhs[k]) return false;
+	
+	for(int i=0;i<datacontainer->size();++i)
+	{		
+		if(datacontainer->operator[](i) != rhs.datacontainer->operator[](i))
+		{
+			return false;
+		}
 	}
 
 	return true;
