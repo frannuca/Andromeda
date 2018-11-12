@@ -22,6 +22,9 @@ namespace data
 	class Series: public Storage<K,V>
 	{		
 	public:
+		typedef K TKEY;
+		typedef V TVALUE;
+
 		virtual ~Series();
 		using TSeries = Series<K, V>;		
 		using Storage<K, V>::Storage;

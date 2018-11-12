@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE(SERIES)
 
 	cout << "Frame ctor" << endl;
 	{
-		Frame<string, qtime::QDate,string,double> frame;
+		Frame<string, qtime::QDate> frame;
 		Series<QDate, double> series1(data);
 		Series<QDate, string> series2(datastr);
 		
@@ -224,7 +224,10 @@ BOOST_AUTO_TEST_CASE(SERIES)
 		
 		Series<qtime::QDate, double>& col1 = frame.getColAs<double>("series1");
 		Series<qtime::QDate, string>& col2 = frame.getColAs<string>("series2");
-		auto col3 = frame.getColAs<double>("series2");
+
+		auto rowkeys = frame.RowIndex();
+		auto colkeys = frame.ColumnsIndex();
+		//BOOST_CHECK_THROW(frame.getColAs<double>("series2"),string);
 		std::vector<std::string> rind1,rind2;	
 	}	
 }
