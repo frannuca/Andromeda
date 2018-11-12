@@ -43,6 +43,23 @@ vector<pair<QDate,double>> GetSeriesData(bool odd=false)
 	return x;
 };
 
+vector<pair<QDate, string>> GetSeriesStringData(bool odd = false)
+{
+	vector<pair<QDate, string>> x;
+
+	int nt = 100;
+	if (odd)
+	{
+		for (int i = 0; i < nt; ++i) if (i % 2 == 0) x.push_back(make_pair(t0 + i, to_string(i)));
+	}
+	else
+	{
+		for (int i = 0; i < nt; ++i) x.push_back(make_pair(t0 + i, to_string(i)));
+	}
+
+	return x;
+};
+
 
 
 
@@ -50,6 +67,7 @@ BOOST_AUTO_TEST_CASE(SERIES)
 {
 	auto data = GetSeriesData();
 	auto data2 = GetSeriesData(true);
+	auto datastr = GetSeriesStringData();
 
 
 	
@@ -197,49 +215,16 @@ BOOST_AUTO_TEST_CASE(SERIES)
 
 	cout << "Frame ctor" << endl;
 	{
-		Frame<string, qtime::QDate, double> frame;
+		Frame<string, qtime::QDate,string,double> frame;
 		Series<QDate, double> series1(data);
-		Series<QDate, double> series2(data2);
+		Series<QDate, string> series2(datastr);
 		
-		frame.withSeries("series1", series1)
-			 .withSeries("series2", series2);
+		frame.addColumn("series1", series1)
+			 .addColumn("series2", series2);
 		
-		Series<qtime::QDate, double>& col1 = frame.col("series1");
-		Series<qtime::QDate, double>& col2 = frame.col("series2");		
-		std::vector<std::string> rind1,rind2;
-		auto i1 = frame.RowIndex();
-		std::transform(i1.begin(), i1.end(), std::back_inserter(rind1), [](const QDate& d) {return d.toString(); });
-		std::cout << "Droppting Sparse rows" << std::endl;
-		frame.DropSparseRows();		
-		std::cout << "Finished Droppting Sparse rows" << std::endl;
-		frame.sortRowsWith([](const QDate& d1, const QDate& d2) {return d1 > d2; });
-
-		auto i2 = frame.RowIndex();
-		std::transform(i2.begin(), i2.end(), std::back_inserter(rind2), [](const QDate& d) {return d.toString(); });
-
-	}
-
-	cout << "Frame ctor 2" << endl;
-	{
-		Frame<string, qtime::QDate, double> frame;
-		Series<QDate, double> series1(data);
-		Series<QDate, double> series2(data2);
-
-		frame.withSeries("series1", series1)
-			.withSeries("series2", series2);
-
-		Series<qtime::QDate, double>& col1 = frame.col("series1");
-		Series<qtime::QDate, double>& col2 = frame.col("series2");
-		std::vector<std::string> rind1, rind2;
-		auto i1 = frame.RowIndex();
-		std::transform(i1.begin(), i1.end(), std::back_inserter(rind1), [](const QDate& d) {return d.toString(); });
-		std::cout << "Filling Sparse rows" << std::endl;
-		frame.FillSparseWith(std::numeric_limits<double>::quiet_NaN());
-		std::cout << "Finished Filling Sparse rows" << std::endl;
-		frame.sortRowsWith([](const QDate& d1, const QDate& d2) {return d1 > d2; });
-
-		auto i2 = frame.RowIndex();
-		std::transform(i2.begin(), i2.end(), std::back_inserter(rind2), [](const QDate& d) {return d.toString(); });
-
-	}
+		Series<qtime::QDate, double>& col1 = frame.getColAs<double>("series1");
+		Series<qtime::QDate, string>& col2 = frame.getColAs<string>("series2");
+		auto col3 = frame.getColAs<double>("series2");
+		std::vector<std::string> rind1,rind2;	
+	}	
 }

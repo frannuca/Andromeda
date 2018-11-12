@@ -153,6 +153,11 @@ bool qtime::QDate::operator==(const QDate& that) const
 	return *_d == *(that._d);
 }
 
+bool qtime::QDate::operator!=(const QDate& that) const
+{
+	return *_d != *(that._d);
+}
+
 
 time_t qtime::QDate::toEpoch() const
 {

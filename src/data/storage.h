@@ -108,6 +108,10 @@ std::pair<int,int> Storage<K, V>::binary_search(const K& key) const
 		m = 0.5*(l + h);
 	}
 
+	if((*datacontainer)[l].first != key && (*datacontainer)[h].first != key)
+	{
+		throw "not found";
+	}
 	return std::make_pair(l,h);
 }
 

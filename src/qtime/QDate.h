@@ -43,6 +43,7 @@ public:
 	bool operator>=(const QDate& that) const;
 
 	bool operator==(const QDate& that) const;
+	bool operator!=(const QDate& that) const;
 	time_t toEpoch() const;
 
 	static bool isLeapYear(int year);
