@@ -12,15 +12,11 @@ namespace data
 	{
 		enum class ValueType { INT_TYPE, DOUBLE_TYPE, BOOL_TYPE, STRING_TYPE };
 	};
-	template<typename C,typename K>
-	class FrameValueTypes: protected Series<C, Series<K, int>>, 
-						   protected Series<C, Series<K, double>>,
-						   protected Series<C, Series<K, bool>>,
-						   protected Series<C, Series<K, string>>
-	{
-	private:
-
-		template<typename T>
+	template<typename C,typename K, typename T>
+	class FrameValueTypes: public Series<C, Series<K, T>>
+	{		
+		T tvalue;
+	private:		
 		vector<K> getRowIndex()
 		{
 			set<K> indices;
@@ -34,8 +30,7 @@ namespace data
 			std::transform(indices.begin(), indices.end(), std::back_inserter(aux), [](const K& a) {return a; });
 			return aux;
 		}
-
-		template<typename T>
+		
 		vector<C> getColumnIndex()
 		{			
 			return this->Series<C, Series<K, T>>::Index();			
@@ -43,30 +38,20 @@ namespace data
 
 		public:		
 
-		map<FRAMETYPES::ValueType,vector<K>> RowKeys()
-		{
-			map<FRAMETYPES::ValueType, vector<K>> indices;
-			indices[FRAMETYPES::ValueType::INT_TYPE] = getRowIndex<int>();
-			indices[FRAMETYPES::ValueType::DOUBLE_TYPE] = getRowIndex<double>();
-			indices[FRAMETYPES::ValueType::BOOL_TYPE] = getRowIndex<bool>();
-			indices[FRAMETYPES::ValueType::STRING_TYPE] = getRowIndex<string>();
-			return indices;
+		void RowKeys(map<string, vector<K>>& indices)
+		{			
+			indices[typeid(tvalue).name()] = getRowIndex();
 		}
 
-		map<FRAMETYPES::ValueType,vector<C>> ColumnKeys()
-		{
-			map<FRAMETYPES::ValueType, vector<C>> indices;
-			indices[FRAMETYPES::ValueType::INT_TYPE] = getColumnIndex<int>();
-			indices[FRAMETYPES::ValueType::DOUBLE_TYPE] = getColumnIndex<double>();
-			indices[FRAMETYPES::ValueType::BOOL_TYPE] = getColumnIndex<bool>();
-			indices[FRAMETYPES::ValueType::STRING_TYPE] = getColumnIndex<string>();
-			return indices;
+		void ColumnKeys(map<string, vector<C>>& indices)
+		{			
+			indices[typeid(tvalue).name()] = getColumnIndex();			
 		}
 
 	};
 
-	template<typename C, typename K>
-	class Frame: protected FrameValueTypes<C,K>
+	template<typename C, typename K, typename ... V>
+	class Frame: protected FrameValueTypes<C,K,V>...
 	{		
 	protected:
 		std::set<C> columns;
@@ -78,50 +63,114 @@ namespace data
 		~Frame(){}
 
 		template<typename T>
-		Frame<C,K>& addColumn(const C& columnkey,Series<K, T>& series);
+		Frame<C,K, V...>& addColumn(const C& columnkey,Series<K, T>& series);
 		
 		template<typename T>
-		Frame<C, K>& addColumn(const C& columnkey, Series<K, T>&& series);
+		Frame<C, K,V...>& addColumn(const C& columnkey, Series<K, T>&& series);
 
 
 		template<class T>
 		Series<K, T>& getColAs(const C& col);
-			
-		map<FRAMETYPES::ValueType, vector<C>> ColumnsIndex() { return this->FrameValueTypes<C, K>::ColumnKeys(); }
-		map<FRAMETYPES::ValueType, vector<K>> RowIndex() { return this->FrameValueTypes<C, K>::RowKeys(); }
+					
+		template<typename T1, typename T2,typename T3, typename T4, typename T5>
+		void ColumnsIndex2(map<string, vector<C>>& m)
+		{
+			this->FrameValueTypes<C, K, T1>::ColumnKeys(m);			
+			ColumnsIndex2<T2,T3,T4,T5>(m);
+		}
 
+		template<typename T2, typename T3, typename T4, typename T5>
+		void ColumnsIndex2(map<string, vector<C>>& m)
+		{
+			this->FrameValueTypes<C, K, T2>::ColumnKeys(m);
+			ColumnsIndex2<T3, T4, T5>(m);
+		}
+
+		template<typename T3, typename T4, typename T5>
+		void ColumnsIndex2(map<string, vector<C>>& m)
+		{
+			this->FrameValueTypes<C, K, T3>::ColumnKeys(m);
+			ColumnsIndex2<T4, T5>(m);
+		}
+
+		template<typename T4, typename T5>
+		void ColumnsIndex2(map<string, vector<C>>& m)
+		{
+			this->FrameValueTypes<C, K, T4>::ColumnKeys(m);
+			ColumnsIndex2<T5>(m);
+		}
+
+		template<typename T5>
+		void ColumnsIndex2(map<string, vector<C>>& m)
+		{
+			this->FrameValueTypes<C, K, T5>::ColumnKeys(m);			
+		}
+
+		template<typename T1, typename T2,typename T3, typename T4>
+		void RowIndex2(map<string, vector<K>> &m)
+		{
+			this->FrameValueTypes<C, K, T1>::RowKeys(m);			
+			RowIndex2<T2,T3,T4>(m);
+		}
+
+		template<typename T2, typename T3, typename T4>
+		void RowIndex2(map<string, vector<K>> &m)
+		{
+			this->FrameValueTypes<C, K, T2>::RowKeys(m);
+			RowIndex2<T3, T4>(m);
+		}
+
+		template<typename T3, typename T4>
+		void RowIndex2(map<string, vector<K>> &m)
+		{
+			this->FrameValueTypes<C, K, T3>::RowKeys(m);
+			RowIndex2<T4>(m);
+		}
+
+		template<typename T4>
+		void RowIndex2(map<string, vector<K>> &m)
+		{
+			this->FrameValueTypes<C, K, T4>::RowKeys(m);			
+		}
+
+		map<string, vector<K>> RowIndex()
+		{
+			map<string, vector<K>> m;
+			RowIndex2<V ...>(m);
+			return m;
+		}
+
+		map<string, vector<C>> ColumnsIndex()
+		{
+			map<string, vector<C>> m;
+			ColumnsIndex2<V...>(m);
+			return m;
+		}
+		
 	};
 
-	template <typename C, typename K>
+	template <typename C, typename K, typename ... V>
 	template <typename T>
-	Frame<C, K>& Frame<C, K>::addColumn(const C& columnkey, Series<K, T>& series)
+	Frame<C, K,V...>& Frame<C, K, V...>::addColumn(const C& columnkey, Series<K, T>& series)
 	{
-		this->Series<C, Series<K, T>>::withdata({ make_pair(columnkey, series) });
-		columns.insert(columnkey);
-		std::vector<K> idx = series.Index();
-		index.insert(idx.begin(), idx.end());
+		this->FrameValueTypes<C, K, T>::withdata({ make_pair(columnkey, series) });
 		return *this;
 	}
 
-	template <typename C, typename K>
+	template <typename C, typename K, typename ... V>
 	template <typename T>
-	Frame<C, K>& Frame<C, K>::addColumn(const C& columnkey, Series<K, T>&& series)
+	Frame<C, K,V ...>& Frame<C, K, V...>::addColumn(const C& columnkey, Series<K, T>&& series)
 	{
-		columns.insert(columnkey);
-		std::vector<K> idx = series.Index();
-		index.insert(idx.begin(), idx.end());
-
-		this->Series<C, Series<K, T>>::withdata({ make_pair(columnkey, std::move(series)) });
+		this->FrameValueTypes<C, K, T>::withdata({ make_pair(columnkey, std::move(series)) });
 		return *this;
 	}
 
-	template <typename C, typename K>
+	template <typename C, typename K, typename ... V>
 	template <class T>
-	Series<K, T>& Frame<C, K>::getColAs(const C& col)
+	Series<K, T>& Frame<C, K, V...>::getColAs(const C& col)
 	{
-		return this->Series<C, Series<K, T>>::operator[](col);
-	}	
-
+		return this->FrameValueTypes<C, K, T>::operator[](col);
+	}
 	
 }
 
