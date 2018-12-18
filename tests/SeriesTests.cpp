@@ -226,6 +226,8 @@ BOOST_AUTO_TEST_CASE(SERIES)
 		Series<qtime::QDate, string>& col2 = frame.getColAs<string>("series2");
 
 		auto co1x2 =  2.0 * col1 ;
+		co1x2.withdata({ std::make_pair(qtime::QDate(1,1,1900.0),1900) });
+		frame.addColumn("new column",co1x2);
 		auto rowkeys = frame.RowIndex();
 		auto colkeys = frame.ColumnsIndex();
 		//BOOST_CHECK_THROW(frame.getColAs<double>("series2"),string);
