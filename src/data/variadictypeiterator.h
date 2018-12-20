@@ -9,7 +9,8 @@ namespace data
 
 	template<typename C, typename K, typename ... V>
 	class VariadicTypeIterator: protected FrameValueTypes<C, K, V>... {
-	protected:
+	protected:	
+		
 		template<typename T1, typename T2, typename T3, typename T4, typename T5>
 		void ColumnsIndex2(map<string, vector<C>>& m)
 		{
@@ -45,30 +46,30 @@ namespace data
 		}
 
 		template<typename T1, typename T2, typename T3, typename T4>
-		void RowIndex2(map<string, vector<K>> &m)
+		void RowIndex2(map<string, vector<K>> &m, bool applyUnionOnRowKeys = true)
 		{
-			this->FrameValueTypes<C, K, T1>::RowKeys(m);
+			this->FrameValueTypes<C, K, T1>::RowKeys(m, applyUnionOnRowKeys);
 			RowIndex2<T2, T3, T4>(m);
 		}
 
 		template<typename T2, typename T3, typename T4>
-		void RowIndex2(map<string, vector<K>> &m)
+		void RowIndex2(map<string, vector<K>> &m, bool applyUnionOnRowKeys = true)
 		{
-			this->FrameValueTypes<C, K, T2>::RowKeys(m);
+			this->FrameValueTypes<C, K, T2>::RowKeys(m, applyUnionOnRowKeys);
 			RowIndex2<T3, T4>(m);
 		}
 
 		template<typename T3, typename T4>
-		void RowIndex2(map<string, vector<K>> &m)
+		void RowIndex2(map<string, vector<K>> &m, bool applyUnionOnRowKeys = true)
 		{
-			this->FrameValueTypes<C, K, T3>::RowKeys(m);
+			this->FrameValueTypes<C, K, T3>::RowKeys(m, applyUnionOnRowKeys);
 			RowIndex2<T4>(m);
 		}
 
 		template<typename T4>
-		void RowIndex2(map<string, vector<K>> &m)
+		void RowIndex2(map<string, vector<K>> &m, bool applyUnionOnRowKeys = true)
 		{
-			this->FrameValueTypes<C, K, T4>::RowKeys(m);
+			this->FrameValueTypes<C, K, T4>::RowKeys(m, applyUnionOnRowKeys);
 		}
 	};
 }

@@ -29,7 +29,7 @@ vector<pair<QDate,double>> GetSeriesData(bool odd=false)
 	srand(time(nullptr));
 	vector<pair<QDate, double>> x;
 	
-	int nt = 100000;
+	int nt = 10;
 	if(odd)
 	{
 		for (int i = 0; i < nt; ++i) if (i%2==0) x.push_back(make_pair(t0 + i, u_dist(rng)));
@@ -47,7 +47,7 @@ vector<pair<QDate, string>> GetSeriesStringData(bool odd = false)
 {
 	vector<pair<QDate, string>> x;
 
-	int nt = 100;
+	int nt = 10;
 	if (odd)
 	{
 		for (int i = 0; i < nt; ++i) if (i % 2 == 0) x.push_back(make_pair(t0 + i, to_string(i)));
@@ -65,8 +65,8 @@ vector<pair<QDate, string>> GetSeriesStringData(bool odd = false)
 
 BOOST_AUTO_TEST_CASE(SERIES)
 {
-	auto data = GetSeriesData();
-	auto data2 = GetSeriesData(true);
+	auto data_all = GetSeriesData();
+	auto data2_odd = GetSeriesData(true);
 	auto datastr = GetSeriesStringData();
 
 
@@ -216,14 +216,21 @@ BOOST_AUTO_TEST_CASE(SERIES)
 	cout << "Frame ctor" << endl;
 	{
 		Frame<string, qtime::QDate,double,string> frame;
-		Series<QDate, double> series1(data);
+		Series<QDate, double> series1(data_all);
 		Series<QDate, string> series2(datastr);
+
+		std::vector<pair<QDate, double>> xrange ({ std::make_pair(t0 + 4,99.0),std::make_pair(t0 + 5,99.0),std::make_pair(t0 + 6,99.0),std::make_pair(t0 + 7,99.0) });
+		Series<QDate, double> series3(xrange);
+
+		
 		
 		frame.addColumn("series1", series1)
-			 .addColumn("series2", series2);
+			 .addColumn("series2", series2)
+		     .addColumn("series3", series3);
 		
 		Series<qtime::QDate, double>& col1 = frame.getColAs<double>("series1");
 		Series<qtime::QDate, string>& col2 = frame.getColAs<string>("series2");
+		Series<qtime::QDate, double>& col3 = frame.getColAs<double>("series3");
 
 		auto co1x2 =  2.0 * col1 ;
 		co1x2.withdata({ std::make_pair(qtime::QDate(1,1,1900.0),1900) });
@@ -231,6 +238,41 @@ BOOST_AUTO_TEST_CASE(SERIES)
 		auto rowkeys = frame.RowIndex();
 		auto colkeys = frame.ColumnsIndex();
 		//BOOST_CHECK_THROW(frame.getColAs<double>("series2"),string);
+		auto intesectedkeys = frame.GetIntersectedRowIndex();
+
+		auto printit = [](auto x)
+		{
+			for (auto d : x)
+			{
+				std::cout << d << std::endl;
+			}
+			std::cout << "///////////////////////////////"<< std::endl;
+		};
+
+		printit(intesectedkeys);
+		printit(frame.RowIndex());
+		
+
+		auto s1 = frame.getColAs<double>("series1");
+		printit(s1.Index());
+		s1.dropOutUnion(intesectedkeys);
+		printit(s1.Index());
+
+		printit(frame.RowIndex());
+
+		
+		auto s2 = frame.getColAs<string>("series2");
+		s2.dropOutUnion(intesectedkeys);
+
+		auto s3 = frame.getColAs<double>("new column");
+		s3.dropOutUnion(intesectedkeys);
+
+		auto s4 = frame.getColAs<double>("series3");
+		s4.dropOutUnion(intesectedkeys);
+
+		std::cout << "FINAL RESULTS" << std::endl;
+		auto rowkeys2 = frame.RowIndex();
+		printit(rowkeys2);
 		
 	}	
 }

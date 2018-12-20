@@ -29,10 +29,10 @@ namespace data
 					
 		
 
-		std::set<K> RowIndex()
+		set<K> RowIndex()
 		{
 			map<string, vector<K>> m;
-			RowIndex2<V ...>(m);
+			RowIndex2<V ...>(m,true);
 			std::set<K> idx;
 			for (auto kv : m) {
 				auto v = kv.second;
@@ -42,6 +42,28 @@ namespace data
 			return idx;
 		}
 
+		set<K> GetIntersectedRowIndex()
+		{
+			map<string, vector<K>> m;
+			RowIndex2<V ...>(m,false);
+			std::set<K> idx;
+			for (auto kv : m) {
+				auto v = kv.second;
+				if(idx.empty())
+				{
+					idx.insert(v.begin(), v.end());
+				}
+				else
+				{
+					set<K> aux;
+					set_intersection(v.begin(), v.end(), idx.begin(), idx.end(), inserter(aux, aux.begin()));
+					idx = aux;
+				}							
+			}
+
+			return idx;
+		}
+		
 		set<C> ColumnsIndex()
 		{
 			map<string, vector<C>> m;
@@ -54,7 +76,7 @@ namespace data
 			}
 			return idx;
 		}
-		
+				
 	};
 
 	template <typename C, typename K, typename ... V>

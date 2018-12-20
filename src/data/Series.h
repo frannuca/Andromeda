@@ -41,7 +41,7 @@ namespace data
 		Series<K, V> subviewCopy(const std::vector<K> keys);
 		void operator=(const Series<K, V>& that);
 		void operator=(Series<K, V>&& that) noexcept;		
-		
+		void filterKeys(const std::set<K>& keys);
 	};
 		
 	template <typename K, typename V>
@@ -142,7 +142,7 @@ namespace data
 	{
 		this->Storage<K, V>::datacontainer.swap(that.datacontainer);		
 	}
-
+	
 	template<typename K, typename V>
 	Series<K, V> applyop(const Series<K, V>& lhs, const Series<K, V>& rhs, std::function<V(const V&,const V&)> op){
 		std::vector<std::pair<K, V>> vdata;

@@ -53,7 +53,8 @@ public:
 	
 	Storage& withdata(std::initializer_list<TPAIR> l);
 	Storage& withdata(const TVEC& l);
-	void dropItems(const std::vector<K>& keys);
+	void dropItems(const std::set<K>& keys);
+	void dropOutUnion(const std::set<K>& keys);
 	void sortIndex(std::function<bool(const K&, const K&)> fcomp);
 	void sortIndex();
 	size_t size() const;
@@ -176,22 +177,66 @@ Storage<K, V>& Storage<K, V>::withdata(const TVEC& l)
 }
 
 template <typename K, typename V>
-void Storage<K, V>::dropItems(const std::vector<K>& keys)
+void Storage<K, V>::dropItems(const std::set<K>& keys)
 {
-	for(auto k:keys)
+	if (keys.empty()) return;
+
+	auto printit = [](auto x)
 	{
-		if(hasIndex(k))
+		for (auto d : x)
 		{
-			auto item = std::find_if(datacontainer->begin(), datacontainer->end(), [&k](const std::pair<K, V>& z) {return k == z.first; });
-			if(item!=datacontainer->end())
-			{
-				datacontainer->erase(item);
-			}
+			std::cout << d << std::endl;
 		}
+		std::cout << "///////////////////////////////" << std::endl;
+	};
+
+	printit(keys);
+	std::vector<K> vkeys;
+	std::transform(keys.begin(), keys.end(), std::back_inserter(vkeys), [](const K& x) {return x; });
+	
+	std::vector<K> indices = Index();
+	typename std::vector<K>::iterator piter2 = indices.begin();
+	std::vector<int> tobedeleted;
+
+	int i = 0;
+	int j = 0;
+	while(i<vkeys.size() && j<indices.size())
+	{
+		auto ak = vkeys[i];
+		auto ck = indices[j];
+		if (ak == ck)
+		{
+			std::cout << ak << std::endl;
+			tobedeleted.push_back(j);
+			++i; ++j;
+		}
+		else if((*fcomparer)(ck,ak))
+		{			
+			++j;
+		}
+		else
+		{
+			++i;
+		}
+	
 	}
+	printit(Index());
+	for (int px = tobedeleted.size() - 1; px >= 0; --px)
+	{
+		datacontainer->erase(datacontainer->begin() + tobedeleted[px]);
+	}
+	printit(Index());
 }
 
-
+template <typename K, typename V>
+void Storage<K, V>::dropOutUnion(const std::set<K>& keys)
+{
+	std::set<K> outunion;
+	auto indices = Index();
+	std::set<K> differences;
+	std::set_symmetric_difference(keys.begin(), keys.end(), indices.begin(), indices.end(), std::inserter(differences, differences.begin()));
+	dropItems(differences);
+}
 
 template <typename K, typename V>
 void Storage<K, V>::sortIndex(std::function<bool(const K&, const K&)> fcomp)
@@ -261,6 +306,9 @@ bool Storage<K, V>::hasIndex(const K& n) const
 	auto indices = this->Index();
 	return std::find(indices.begin(), indices.end(), n) != indices.end();
 }
+
+
+
 
 template <typename K, typename V>
 void Storage<K, V>::operator=(const Storage<K, V>& rhs)
